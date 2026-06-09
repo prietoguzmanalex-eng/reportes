@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Reportes — Turnos</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #080a0e;
+  --bg2:      #0f1117;
+  --bg3:      #181b23;
+  --bg4:      #1f232e;
+  --border:   #252932;
+  --text:     #e2e5ee;
+  --muted:    #5a6070;
+  --muted2:   #3a3f4e;
+  --ok:       #22c55e;
+  --ok-dim:   #052e16;
+  --ok-b:     #14532d;
+  --warn:     #f59e0b;
+  --warn-dim: #1c1407;
+  --warn-b:   #78350f;
+  --danger:   #ef4444;
+  --danger-dim:#2d0a0a;
+  --danger-b: #7f1d1d;
+  --blue:     #3b82f6;
+  --blue-dim: #0a1628;
+  --blue-b:   #1e3a5f;
+  --accent:   #6366f1;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
+
+/* ── ALERTA BANNER ── */
+#alerta-banner{
+  display:none;position:sticky;top:0;z-index:200;
+  background:linear-gradient(90deg,#7f1d1d,#991b1b,#7f1d1d);
+  border-bottom:2px solid var(--danger);
+  padding:14px 28px;
+  animation:pulse-bg 2s ease-in-out infinite;
+}
+#alerta-banner.show{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+@keyframes pulse-bg{0%,100%{opacity:1}50%{opacity:.85}}
+.alerta-icon{font-size:22px;animation:shake .6s ease infinite}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.alerta-txt{flex:1}
+.alerta-txt strong{font-size:15px;font-family:var(--mono);letter-spacing:.3px}
+.alerta-txt p{font-size:12px;opacity:.85;margin-top:3px}
+.alerta-countdown{font-family:var(--mono);font-size:24px;font-weight:700;color:#fca5a5;min-width:80px;text-align:right}
+
+/* ── HEADER ── */
+.header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:16px 28px;display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.header-brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:38px;height:38px;background:var(--accent);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;letter-spacing:-1px;
+}
+.brand-text h1{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.brand-text p{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.clock-block{text-align:right}
+#reloj{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:1px;line-height:1}
+#fecha-hoy{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:3px}
+.turno-pill{
+  padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:600;
+  border:1px solid;white-space:nowrap;
+}
+.turno-pill.manana{background:#1c1305;color:var(--warn);border-color:#78350f}
+.turno-pill.tarde {background:#0a1628;color:var(--blue);border-color:#1e3a5f}
+.turno-pill.noche {background:#1a0f2e;color:#a78bfa;border-color:#4c1d95}
+.btn{
+  padding:7px 16px;border-radius:7px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);cursor:pointer;
+  font-family:var(--mono);font-size:12px;font-weight:600;
+  transition:all .15s;letter-spacing:.3px;white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#4f52e0;border-color:#4f52e0;color:#fff}
+
+/* ── CONFIG PANEL ── */
+#config-panel{display:none;background:var(--bg2);border-bottom:1px solid var(--border);padding:20px 28px}
+#config-panel.open{display:block}
+#config-panel h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;font-family:var(--mono)}
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.cfg-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-family:var(--mono)}
+.cfg-field input,.cfg-field select{
+  width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-size:12px;font-family:var(--mono);outline:none;
+}
+.cfg-field input:focus{border-color:var(--accent)}
+.cfg-note{font-size:11px;color:var(--muted);margin-top:10px;font-family:var(--mono);line-height:1.6}
+
+/* ── NAV TABS ── */
+.tabs{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 28px;display:flex;gap:0;overflow-x:auto;
+}
+.tab{
+  padding:14px 20px;font-size:13px;font-weight:500;cursor:pointer;
+  border-bottom:2px solid transparent;color:var(--muted);
+  white-space:nowrap;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+
+/* ── SECCIONES ── */
+.section{display:none;padding:28px}
+.section.active{display:block}
+
+/* ── KPI BAR ── */
+.kpi-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.kpi{background:var(--bg2);padding:18px 20px}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono)}
+.kpi-val{font-size:26px;font-family:var(--mono);font-weight:700;line-height:1;margin:6px 0 4px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.danger{color:var(--danger)}.blue{color:var(--blue)}.accent{color:var(--accent)}
+
+/* ── ALERTAS TABLE ── */
+.section-label{font-size:11px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.alertas-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
+.alerta-card{
+  display:flex;align-items:center;gap:16px;padding:14px 18px;
+  border-radius:8px;border:1px solid;
+}
+.alerta-card.danger{background:var(--danger-dim);border-color:var(--danger-b)}
+.alerta-card.warn  {background:var(--warn-dim);border-color:var(--warn-b)}
+.alerta-card.ok    {background:var(--ok-dim);border-color:var(--ok-b)}
+.alerta-card-icon{font-size:20px;width:28px;text-align:center}
+.alerta-card-body{flex:1}
+.alerta-card-title{font-size:13px;font-weight:600;font-family:var(--mono)}
+.alerta-card-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.alerta-card-time{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg3)}
+thead th{padding:11px 16px;text-align:left;font-size:11px;font-family:var(--mono);color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg3)}
+tbody td{padding:10px 16px;font-size:13px;vertical-align:middle}
+.td-mono{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;white-space:nowrap;border:1px solid}
+.badge-ok{background:var(--ok-dim);color:var(--ok);border-color:var(--ok-b)}
+.badge-warn{background:var(--warn-dim);color:var(--warn);border-color:var(--warn-b)}
+.badge-danger{background:var(--danger-dim);color:var(--danger);border-color:var(--danger-b)}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border-color:var(--blue-b)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot-ok{background:var(--ok)}.dot-warn{background:var(--warn)}.dot-danger{background:var(--danger)}
+
+/* ── STATS TRABAJADORES ── */
+.workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:28px}
+.worker-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color .15s}
+.worker-card:hover{border-color:var(--accent)}
+.worker-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;margin-bottom:10px}
+.worker-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.worker-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.bar-wrap{background:var(--bg4);border-radius:3px;height:5px;overflow:hidden;margin:6px 0 4px}
+.bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.bar-label{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.worker-last{font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+
+/* ── TURNO STATS ── */
+.turno-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.turno-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.turno-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.turno-card-name{font-size:13px;font-weight:600;font-family:var(--mono)}
+.turno-card-name.manana{color:var(--warn)}
+.turno-card-name.tarde{color:var(--blue)}
+.turno-card-name.noche{color:#a78bfa}
+.turno-stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.turno-stat-row:last-child{border-bottom:none}
+.turno-stat-label{color:var(--muted)}
+.turno-stat-val{font-family:var(--mono);font-weight:600}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;justify-content:space-between}
+.filter-left{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-family:var(--mono);transition:all .15s}
+.filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,.08)}
+.week-nav{display:flex;align-items:center;gap:8px}
+.week-nav span{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:150px;text-align:center}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:50px 0;color:var(--muted)}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.empty p{font-size:13px}
+
+/* ── TOAST / STATUS ── */
+#status-bar{
+  position:fixed;bottom:20px;right:20px;z-index:300;
+  background:var(--bg3);border:1px solid var(--border);
+  padding:10px 16px;border-radius:8px;font-family:var(--mono);font-size:12px;
+  transform:translateY(60px);opacity:0;transition:all .25s;
+  display:flex;align-items:center;gap:8px;
+}
+#status-bar.show{transform:translateY(0);opacity:1}
+.status-dot{width:7px;height:7px;border-radius:50%}
+
+/* ── BARRA FILTROS GLOBALES ── */
+.filtros-globales{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.filtros-globales label{font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+.select-filtro{
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-size:12px;font-family:var(--mono);
+  cursor:pointer;outline:none;transition:border-color .15s;
+}
+.select-filtro:focus,.select-filtro:hover{border-color:var(--accent)}
+.filtro-sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.filtro-reset{
+  padding:5px 12px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-size:11px;font-family:var(--mono);transition:all .15s;
+}
+.filtro-reset:hover{border-color:var(--danger);color:var(--danger)}
+#filtro-resumen{
+  font-size:11px;color:var(--accent);font-family:var(--mono);
+  background:rgba(99,102,241,.1);padding:3px 10px;border-radius:4px;
+  border:1px solid rgba(99,102,241,.25);display:none;
+}
+#filtro-resumen.show{display:inline-block}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .header,.section{padding:14px 16px}
+  .tabs{padding:0 8px}
+  .kpi-bar{grid-template-columns:repeat(2,1fr)}
+  .turno-stats{grid-template-columns:1fr}
+  .workers-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ALERTA BANNER -->
+<div id="alerta-banner">
+  <span class="alerta-icon">🚨</span>
+  <div class="alerta-txt">
+    <strong id="alerta-titulo">TURNO SIN REPORTE DE ACTIVIDADES</strong>
+    <p id="alerta-desc">Faltan menos de 60 minutos para terminar el turno y no se ha registrado ningún reporte.</p>
+  </div>
+  <div class="alerta-countdown" id="alerta-countdown">--:--</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <div class="logo">RT</div>
+    <div class="brand-text">
+      <h1>Control de Reportes — Proyecto Falcon O-I Zipaquirá</h1>
+      <p id="turno-activo-label">—</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="turno-pill-wrap"></div>
+    <div class="clock-block">
+      <div id="reloj">--:--:--</div>
+      <div id="fecha-hoy">—</div>
+    </div>
+    <button class="btn" onclick="toggleConfig()">⚙ Config</button>
+    <button class="btn btn-primary" onclick="actualizarDatos()">↻ Actualizar</button>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div id="config-panel">
+  <h3>Conexión al Excel de SharePoint / OneDrive</h3>
+  <div class="cfg-grid">
+    <div class="cfg-field">
+      <label>Client ID (Azure App)</label>
+      <input id="cfg-client" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+    </div>
+    <div class="cfg-field">
+      <label>Tenant ID</label>
+      <input id="cfg-tenant" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+    </div>
+    <div class="cfg-field">
+      <label>Site ID de SharePoint</label>
+      <input id="cfg-site" type="text" placeholder="tuempresa.sharepoint.com,abc123...">
+    </div>
+    <div class="cfg-field">
+      <label>Drive Item ID del archivo Excel</label>
+      <input id="cfg-item" type="text" placeholder="01XXXXXXXXXXXXXXXX">
+    </div>
+    <div class="cfg-field">
+      <label>Nombre del Sheet (pestaña)</label>
+      <input id="cfg-sheet" type="text" placeholder="Sheet1" value="Sheet1">
+    </div>
+    <div class="cfg-field">
+      <label>Columna Nombre/Personas (letra)</label>
+      <input id="cfg-col-nombre" type="text" placeholder="E" value="E">
+    </div>
+    <div class="cfg-field">
+      <label>Columna Turno (letra)</label>
+      <input id="cfg-col-turno" type="text" placeholder="I" value="I">
+    </div>
+    <div class="cfg-field">
+      <label>Columna Fecha (letra)</label>
+      <input id="cfg-col-fecha" type="text" placeholder="F" value="F">
+    </div>
+    <div class="cfg-field">
+      <label>Columna Actividad (letra)</label>
+      <input id="cfg-col-act" type="text" placeholder="K" value="K">
+    </div>
+  </div>
+  <div class="cfg-note">
+    ⓘ Cómo obtener el Site ID y Item ID: abre el archivo en SharePoint → Información → Propiedades → copia la URL y extrae los IDs.<br>
+    ⓘ Sin Azure configurado, usa el botón <strong>"Cargar demo"</strong> para ver el dashboard con datos simulados.
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="guardarConfig();actualizarDatos()">Guardar y conectar</button>
+    <button class="btn" onclick="cargarDemo()">Cargar demo</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="cambiarTab('alertas',this)">🚨 Alertas y estado</button>
+  <button class="tab" onclick="cambiarTab('estadisticas',this)">📊 Estadísticas</button>
+  <button class="tab" onclick="cambiarTab('reportes',this)">📋 Todos los reportes</button>
+</div>
+
+<!-- FILTROS GLOBALES -->
+<div class="filtros-globales">
+  <label>📅 Mes:</label>
+  <select class="select-filtro" id="filtro-mes" onchange="aplicarFiltrosGlobales()">
+    <option value="">Todos los meses</option>
+  </select>
+  <div class="filtro-sep"></div>
+  <label>🔄 Turno:</label>
+  <select class="select-filtro" id="filtro-turno-global" onchange="aplicarFiltrosGlobales()">
+    <option value="">Todos los turnos</option>
+    <option value="Mañana">☀ Mañana (6:00–14:00)</option>
+    <option value="Tarde">🌤 Tarde (14:00–22:00)</option>
+    <option value="Noche">🌙 Noche (22:00–6:00)</option>
+  </select>
+  <div class="filtro-sep"></div>
+  <span id="filtro-resumen"></span>
+  <button class="filtro-reset" onclick="resetFiltros()">✕ Limpiar filtros</button>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB 1: ALERTAS Y ESTADO                    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section active" id="tab-alertas">
+
+  <!-- KPIs -->
+  <div class="kpi-bar">
+    <div class="kpi">
+      <div class="kpi-label">Total reportes</div>
+      <div class="kpi-val accent" id="kpi-total">—</div>
+      <div class="kpi-sub">registros acumulados</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Hoy</div>
+      <div class="kpi-val" id="kpi-hoy">—</div>
+      <div class="kpi-sub" id="kpi-hoy-sub">reportes hoy</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Cumplimiento semana</div>
+      <div class="kpi-val" id="kpi-pct">—</div>
+      <div class="kpi-sub" id="kpi-pct-sub">turnos reportaron</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Faltantes semana</div>
+      <div class="kpi-val danger" id="kpi-faltantes">—</div>
+      <div class="kpi-sub">turnos sin reporte</div>
+    </div>
+  </div>
+
+  <!-- Estado de turnos hoy -->
+  <div class="section-label">Estado de turnos — hoy</div>
+  <div class="alertas-grid" id="alertas-hoy"></div>
+
+  <!-- Historial de faltantes esta semana -->
+  <div class="section-label" style="margin-top:8px">Faltantes esta semana</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Horario</th>
+          <th>Último reporte</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-faltantes"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB 2: ESTADÍSTICAS                        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="tab-estadisticas">
+
+  <!-- Por turno -->
+  <div class="section-label">Estadísticas por turno</div>
+  <div class="turno-stats" id="turno-stats-grid"></div>
+
+  <!-- Por trabajador -->
+  <div class="section-label">Historial por trabajador</div>
+  <div class="workers-grid" id="workers-grid"></div>
+
+  <!-- Actividades más frecuentes -->
+  <div class="section-label">Actividades más reportadas</div>
+  <div class="table-wrap" style="margin-bottom:0">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Actividad</th>
+          <th>Veces reportada</th>
+          <th>Turno más frecuente</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-actividades"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB 3: TODOS LOS REPORTES                  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="tab-reportes">
+  <div class="filters">
+    <div class="filter-left">
+      <button class="filter-btn active" onclick="filtrar('todos',this)">Todos</button>
+      <button class="filter-btn" onclick="filtrar('manana',this)">☀ Mañana</button>
+      <button class="filter-btn" onclick="filtrar('tarde',this)">🌤 Tarde</button>
+      <button class="filter-btn" onclick="filtrar('noche',this)">🌙 Noche</button>
+    </div>
+    <div class="week-nav">
+      <button class="btn" onclick="navSemana(-1)">←</button>
+      <span id="semana-label">—</span>
+      <button class="btn" onclick="navSemana(1)">→</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Personas</th>
+          <th>Actividad</th>
+          <th>Equipo / Zona</th>
+          <th>Insumos</th>
+          <th>Observaciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-reportes"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="status-bar">
+  <div class="status-dot" id="status-dot" style="background:var(--muted)"></div>
+  <span id="status-msg">Listo</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONFIGURACIÓN DE TURNOS
+// ══════════════════════════════════════════════════
+const TURNOS = [
+  { nombre: 'Mañana', inicio: 6,  fin: 14, clase: 'manana', emoji: '☀️',  color: '#f59e0b' },
+  { nombre: 'Tarde',  inicio: 14, fin: 22, clase: 'tarde',  emoji: '🌤️', color: '#3b82f6' },
+  { nombre: 'Noche',  inicio: 22, fin: 30, clase: 'noche',  emoji: '🌙', color: '#a78bfa' }, // fin 30 = 6am +1día
+];
+const COLORES_AVATAR = ['#6366f1','#f59e0b','#22c55e','#ef4444','#3b82f6','#a78bfa','#ec4899','#14b8a6'];
+
+// ══════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════════════
+let DATA = [];           // todos los reportes
+let DATA_FILTRADA = [];  // datos después de aplicar filtros globales
+let semanaOffset = 0;
+let filtroActual = 'todos';
+let filtroMes = '';
+let filtroTurnoGlobal = '';
+let msalInstance = null;
+
+// ══════════════════════════════════════════════════
+//  UTILIDADES FECHA / TURNO
+// ══════════════════════════════════════════════════
+function horaActual() {
+  const n = new Date();
+  return n.getHours() + n.getMinutes()/60;
+}
+
+function turnoActual() {
+  const h = horaActual();
+  if (h >= 6  && h < 14) return TURNOS[0];
+  if (h >= 14 && h < 22) return TURNOS[1];
+  return TURNOS[2]; // noche: 22-6
+}
+
+function minParaFinTurno() {
+  const h = new Date().getHours();
+  const m = new Date().getMinutes();
+  const totalMin = h * 60 + m;
+  // Fin de mañana: 14:00 = 840, tarde: 22:00 = 1320, noche: 6:00 siguiente = 360
+  let finMin;
+  if (h >= 6  && h < 14) finMin = 14 * 60;
+  else if (h >= 14 && h < 22) finMin = 22 * 60;
+  else finMin = (h >= 22) ? (24 + 6) * 60 : 6 * 60;
+  let diff;
+  if (h >= 22) diff = (24*60 + 6*60) - totalMin;
+  else diff = finMin - totalMin;
+  return diff;
+}
+
+function parseDate(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  let m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const p = new Date(s);
+  return isNaN(p) ? null : p;
+}
+
+function mismaFecha(a, b) {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function lunes(off=0) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = hoy.getDay()||7;
+  hoy.setDate(hoy.getDate()-d+1+off*7);
+  return hoy;
+}
+
+function diasSemana(off=0) {
+  const dias = [];
+  const lun = lunes(off);
+  for(let i=0;i<7;i++){
+    const d = new Date(lun); d.setDate(lun.getDate()+i);
+    dias.push(d);
+  }
+  return dias;
+}
+
+function fmtFecha(d) {
+  return d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function fmtDia(d) {
+  return d.toLocaleDateString('es-CO',{weekday:'short',day:'2-digit',month:'2-digit'});
+}
+
+function normTurno(val) {
+  const s = String(val||'').toLowerCase().trim();
+  if (s.includes('ma') || s.includes('morning')) return 'Mañana';
+  if (s.includes('tarde') || s.includes('afternoon')) return 'Tarde';
+  if (s.includes('noche') || s.includes('night')) return 'Noche';
+  return val;
+}
+
+// ══════════════════════════════════════════════════
+//  FILTROS GLOBALES (mes + turno)
+// ══════════════════════════════════════════════════
+function poblarSelectorMes() {
+  const sel = document.getElementById('filtro-mes');
+  const meses = [...new Set(DATA.map(r => {
+    if(!r.fecha) return null;
+    return r.fecha.getFullYear() + '-' + String(r.fecha.getMonth()+1).padStart(2,'0');
+  }).filter(Boolean))].sort().reverse();
+  sel.innerHTML = '<option value="">Todos los meses</option>';
+  meses.forEach(m => {
+    const [y, mo] = m.split('-');
+    const label = new Date(+y, +mo-1, 1).toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+    sel.innerHTML += `<option value="${m}">${label.charAt(0).toUpperCase()+label.slice(1)}</option>`;
+  });
+  // Restaurar selección si existía
+  if(filtroMes) sel.value = filtroMes;
+}
+
+function aplicarFiltrosGlobales() {
+  filtroMes = document.getElementById('filtro-mes').value;
+  filtroTurnoGlobal = document.getElementById('filtro-turno-global').value;
+
+  DATA_FILTRADA = DATA.filter(r => {
+    if(filtroMes && r.fecha) {
+      const key = r.fecha.getFullYear() + '-' + String(r.fecha.getMonth()+1).padStart(2,'0');
+      if(key !== filtroMes) return false;
+    }
+    if(filtroTurnoGlobal && r.turno !== filtroTurnoGlobal) return false;
+    return true;
+  });
+
+  // Actualizar etiqueta resumen
+  const partes = [];
+  if(filtroMes) {
+    const [y,mo] = filtroMes.split('-');
+    partes.push(new Date(+y,+mo-1,1).toLocaleDateString('es-CO',{month:'long',year:'numeric'}));
+  }
+  if(filtroTurnoGlobal) partes.push('Turno ' + filtroTurnoGlobal);
+  const res = document.getElementById('filtro-resumen');
+  if(partes.length > 0) {
+    res.textContent = '🔍 ' + partes.join(' · ') + ' — ' + DATA_FILTRADA.length + ' registros';
+    res.classList.add('show');
+  } else {
+    res.classList.remove('show');
+  }
+
+  renderTodo();
+}
+
+function resetFiltros() {
+  filtroMes = '';
+  filtroTurnoGlobal = '';
+  document.getElementById('filtro-mes').value = '';
+  document.getElementById('filtro-turno-global').value = '';
+  document.getElementById('filtro-resumen').classList.remove('show');
+  DATA_FILTRADA = [...DATA];
+  renderTodo();
+}
+
+function datosActivos() {
+  return DATA_FILTRADA.length > 0 || filtroMes || filtroTurnoGlobal ? DATA_FILTRADA : DATA;
+}
+
+// ══════════════════════════════════════════════════
+//  RELOJ Y TURNO EN VIVO
+// ══════════════════════════════════════════════════
+function tickReloj() {
+  const ahora = new Date();
+  document.getElementById('reloj').textContent =
+    ahora.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('fecha-hoy').textContent =
+    ahora.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  
+  const t = turnoActual();
+  document.getElementById('turno-activo-label').textContent =
+    `Turno activo: ${t.nombre} (${t.inicio}:00 – ${t.fin>23?t.fin-24:t.fin}:00)`;
+  
+  // Pill
+  const pill = document.getElementById('turno-pill-wrap');
+  pill.innerHTML = `<span class="turno-pill ${t.clase}">${t.emoji} Turno ${t.nombre}</span>`;
+  
+  // Alerta 60 min
+  const min = minParaFinTurno();
+  const hoyReps = DATA.filter(r => r.fecha && mismaFecha(r.fecha, ahora) && normTurno(r.turno) === t.nombre);
+  
+  if (min <= 60 && min > 0 && hoyReps.length === 0) {
+    const banner = document.getElementById('alerta-banner');
+    banner.classList.add('show');
+    document.getElementById('alerta-titulo').textContent =
+      `⚠ TURNO ${t.nombre.toUpperCase()} SIN REPORTE DE ACTIVIDADES`;
+    document.getElementById('alerta-desc').textContent =
+      `Quedan ${min} minuto(s) para terminar el turno ${t.nombre} (finaliza a las ${t.fin>23?t.fin-24:t.fin}:00 hs) y no se ha registrado ningún reporte.`;
+    const mins = Math.floor(min);
+    const segs = ahora.getSeconds();
+    document.getElementById('alerta-countdown').textContent =
+      String(mins).padStart(2,'0') + ':' + String(60-segs).padStart(2,'0');
+  } else {
+    document.getElementById('alerta-banner').classList.remove('show');
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  CRONOGRAMA REAL POR TURNO Y DÍA
+// ══════════════════════════════════════════════════
+const TECNICOS = ['DANIEL','GEORGE','EDUAR','JHONNY','DIEGO','MARCOS','JEFRY','CRISTIAN'];
+
+const CRONOGRAMA = {
+  'Mañana': {
+    comun: [
+      'Inspección de aspersores de Draycooler (identificar y dejar funcionando)',
+      'Limpieza de filtros de bomba de recirculación y filtros externos, realizar limpieza e inspección de válvulas de control y cambio de guata',
+      'Retro lavado de los dos filtros azules y limpieza e inspección de bomba'
+    ],
+    porDia: {
+      0: ['Limpieza de filtros primarios compresores de baja y alta, cambio de bolas, limpieza de caja de filtración externa, limpieza de condensador de instrumentación de compresores de alta y baja'],
+      1: ['Limpieza de Draycooler 1: lavado de mallas por todas las caras, lavado radiadores de todas las caras, limpieza de filtro del piso de la filtro lavadora, limpieza de filtro del estanque y limpieza de aspersores'],
+      2: ['Limpieza de filtros primarios compresores de baja y alta, cambio de bolas, limpieza de caja de filtración externa, inspección de contactores y controladores de todos los Draycooler y revisión dirección de ventiladores'],
+      3: ['Limpieza de Draycooler 2: lavado de mallas por todas las caras, lavado radiadores, limpieza de filtro de la filtro lavadora, limpieza de filtro del estanque, limpieza de aspersores'],
+      4: ['Limpieza de filtros primarios compresores, cambio de bolas, limpieza de caja de filtración externa, inspección de filtros de condensados de instrumentación'],
+      5: ['Limpieza de Draycooler 3: lavado de mallas por todas las caras, limpieza de filtros, limpieza de aspersores, cambio de bolas'],
+      6: ['Inspección de sistemas eléctricos con cámara termográfica, revisión de acometida eléctrica antena 440 de Draycooler, secadoras y compresores']
+    }
+  },
+  'Tarde': {
+    comun: [
+      'Primer piso: lavado de canecas de basura, cambio de bolsa y disposición de basura en el punto de acopio, ubicación de papeleras, barrer el piso, organizar desorden',
+      'Inspección de sustancias químicas (orden y aseo), limpieza de dugas, gabinete ordenado y limpio',
+      'Revisión de datos de vibraciones de motores de todo el equipo, limpieza de radiación, impresión e inspección de señalización, cartelera y botiquines'
+    ],
+    porDia: {
+      0: ['Inspección de sustancias químicas, limpieza de área de decoración, revisión de condensadora, revisión de fugas'],
+      1: ['Segundo piso: lavado de canecas, cambio de bolsa, disposición de basura, organizar desorden, inspección de herramienta y estantería'],
+      2: ['Primer piso: lavado de canecas, cambio de bolsa, disposición de basura, barrer el piso, organizar desorden'],
+      3: ['Segundo piso: lavado de canecas de basura, cambio de bolsa, disposición de basura, limpieza de herramienta y estantería'],
+      4: ['Primer piso: lavado de canecas, cambio de bolsa, disposición de basura, barrer el piso con fleto lavadora, limpieza e inspección de extintores'],
+      5: ['Segundo piso: lavado de canecas, cambio de bolsa, disposición de basura, limpieza con fleto lavadora, limpieza e inspección de extintores y señalización'],
+      6: ['Retiro de filtros de panel de segundo piso, instalación de mallas de repuesto']
+    }
+  },
+  'Noche': {
+    comun: [
+      'Limpieza general compresores alta y baja del primer piso, inspección y detección de fugas',
+      'Inspección de limpieza de condensado: anillo de interconexión de alta, anillo de interconexión de baja, sala de emergencia, todos los prefiltros y post filtros de baja, limpieza de sala de máquinas, limpieza de sala de transferencia eléctrica, revisión de señalización, cartelera y botiquines'
+    ],
+    porDia: {
+      0: ['Limpieza de secadoras de baja y alta del primer piso, inspección de drenaje, inspección de punto de rocío, inspección de fuga interna y fugas externas'],
+      1: ['Limpieza de secadoras de baja y alta, inspección de válvulas, inspección de malla y limpieza interior general, inspección de punto de rocío, inspección de fuga interna y fugas externas'],
+      2: ['Limpieza general compresores alta y baja del primer piso, inspección y detección de fugas'],
+      3: ['Limpieza de secadoras de baja y alta del primer piso, inspección de drenaje, inspección de punto de rocío'],
+      4: ['Limpieza general compresores alta y baja del primer piso, inspección y detección de fugas'],
+      5: ['Limpieza de secadoras de baja y alta, inspección general, limpieza interior'],
+      6: ['Revisión, inspección y prueba de sistema de aire, tubería de suministro, revisión de fugas, inspección de válvulas de desconexión']
+    }
+  }
+};
+
+const EQUIPOS = [
+  'Bombas de recirculación','INFRAESTRUCTURA PRI','INFRAESTRUCTURA SEC',
+  'Draycooler 1','Draycooler 2','Draycooler 3','Draycooler 4',
+  'CA3','CB1','CB2','CB4','SCA1','Compresores','Secadoras'
+];
+
+// ══════════════════════════════════════════════════
+//  DATOS DEMO
+// ══════════════════════════════════════════════════
+function cargarDemo() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const turnos = ['Mañana','Tarde','Noche'];
+
+  // Asignación de técnicos por turno (2-3 por turno)
+  const asignacion = {
+    'Mañana': ['DIEGO','MARCOS','JHONNY'],
+    'Tarde':  ['GEORGE','EDUAR','DANIEL'],
+    'Noche':  ['JEFRY','CRISTIAN']
+  };
+
+  DATA = [];
+  for(let d=0;d<14;d++){
+    const fecha = new Date(hoy); fecha.setDate(hoy.getDate()-d);
+    const diaSemana = fecha.getDay(); // 0=domingo,1=lunes,...,6=sábado
+
+    turnos.forEach(turno => {
+      // Simular algunos faltantes reales
+      if(d===0 && turno==='Noche') return;
+      if(d===2 && turno==='Tarde') return;
+      if(d===4 && turno==='Mañana') return;
+      if(d===6 && turno==='Noche') return;
+
+      const crono = CRONOGRAMA[turno];
+      const actsDia = [
+        ...crono.comun,
+        ...(crono.porDia[diaSemana] || [])
+      ];
+      const tecnicos = asignacion[turno];
+
+      // Múltiples reportes por turno — cada actividad puede ser un reporte separado
+      const nReps = Math.floor(Math.random()*3)+2;
+      for(let r=0;r<nReps;r++){
+        const act = actsDia[r % actsDia.length];
+        const t1 = tecnicos[0];
+        const t2 = tecnicos[Math.floor(Math.random()*tecnicos.length)];
+        DATA.push({
+          fecha: new Date(fecha),
+          turno,
+          personas: t1 + (t2 !== t1 ? '; ' + t2 : ''),
+          actividad: act,
+          equipo: EQUIPOS[Math.floor(Math.random()*EQUIPOS.length)],
+          insumos: ['Trapos y guantes','Guantes nitrilo','Agua y jabón','N/A','Escoba y recogedor'][Math.floor(Math.random()*5)],
+          obs: Math.random()>.6 ? 'Sin novedad' : Math.random()>.5 ? 'Requiere seguimiento' : ''
+        });
+      }
+    });
+  }
+  DATA_FILTRADA = [...DATA];
+  poblarSelectorMes();
+  renderTodo();
+  status('Datos demo cargados — ' + DATA.length + ' reportes', 'ok');
+}
+
+// ══════════════════════════════════════════════════
+//  MICROSOFT GRAPH — CONEXIÓN REAL
+// ══════════════════════════════════════════════════
+async function actualizarDatos() {
+  const clientId = document.getElementById('cfg-client').value.trim();
+  const tenantId = document.getElementById('cfg-tenant').value.trim();
+  if (!clientId || !tenantId) {
+    status('Configura Client ID y Tenant ID primero', 'warn');
+    cargarDemo();
+    return;
+  }
+  status('Conectando a Microsoft 365...', 'blue');
+  try {
+    if (!window.msal) {
+      await loadScript('https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js');
+    }
+    if (!msalInstance) {
+      msalInstance = new msal.PublicClientApplication({
+        auth: { clientId, authority: 'https://login.microsoftonline.com/' + tenantId,
+                redirectUri: window.location.href }
+      });
+      await msalInstance.initialize();
+    }
+    let result;
+    try { result = await msalInstance.loginPopup({ scopes: ['Files.Read','Files.Read.All','Sites.Read.All'] }); }
+    catch(e) {
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        result = await msalInstance.acquireTokenSilent({ scopes: ['Files.Read','Files.Read.All'], account: accounts[0] });
+      } else throw e;
+    }
+    await fetchExcel(result.accessToken);
+  } catch(e) {
+    status('Error: ' + e.message, 'danger');
+  }
+}
+
+async function fetchExcel(token) {
+  const siteId  = document.getElementById('cfg-site').value.trim();
+  const itemId  = document.getElementById('cfg-item').value.trim();
+  const sheet   = document.getElementById('cfg-sheet').value.trim() || 'Sheet1';
+  
+  let url;
+  if (siteId && itemId) {
+    url = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/workbook/worksheets/${sheet}/usedRange`;
+  } else {
+    url = `https://graph.microsoft.com/v1.0/me/drive/root:/reportes.xlsx:/workbook/worksheets/${sheet}/usedRange`;
+  }
+  
+  const resp = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  if (!resp.ok) { status('Error al leer Excel: ' + resp.status, 'danger'); return; }
+  const json = await resp.json();
+  parsearExcel(json.values);
+}
+
+function parsearExcel(rows) {
+  if (!rows || rows.length < 2) { status('Sin datos en el Excel', 'warn'); return; }
+  const headers = rows[0].map(h => String(h||'').toLowerCase().trim());
+  
+  const idx = name => {
+    // buscar por texto
+    const i = headers.findIndex(h => h.includes(name));
+    // fallback a la columna configurada
+    if (i >= 0) return i;
+    return -1;
+  };
+  
+  const colFecha   = idx('fecha');
+  const colTurno   = idx('turno');
+  const colPersona = headers.findIndex(h => h.includes('quien') || h.includes('quién') || h.includes('realiz') || h.includes('nombre'));
+  const colAct     = headers.findIndex(h => h.includes('actividad'));
+  const colEquipo  = idx('equipo');
+  const colInsumos = idx('insumo');
+  const colObs     = headers.findIndex(h => h.includes('obs') || h.includes('observ'));
+  
+  DATA = rows.slice(1).map(r => {
+    const fecha = parseDate(r[colFecha]);
+    if (!fecha) return null;
+    return {
+      fecha,
+      turno: normTurno(r[colTurno]),
+      personas: String(r[colPersona]||'').trim(),
+      actividad: String(r[colAct]||'').trim(),
+      equipo: String(colEquipo>=0 ? r[colEquipo] : '').trim(),
+      insumos: String(colInsumos>=0 ? r[colInsumos] : '').trim(),
+      obs: String(colObs>=0 ? r[colObs] : '').trim(),
+    };
+  }).filter(Boolean);
+  
+  DATA_FILTRADA = [...DATA];
+  poblarSelectorMes();
+  renderTodo();
+  status('Excel cargado — ' + DATA.length + ' reportes', 'ok');
+}
+
+function loadScript(src) {
+  return new Promise((res,rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER PRINCIPAL
+// ══════════════════════════════════════════════════
+function renderTodo() {
+  renderAlertas();
+  renderEstadisticas();
+  renderTablaReportes();
+  actualizarSemanaLabel();
+}
+
+// ── TAB 1: ALERTAS ──
+function renderAlertas() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const DA = datosActivos();
+  const turnos = ['Mañana','Tarde','Noche'];
+  const horarios = ['6:00 – 14:00', '14:00 – 22:00', '22:00 – 6:00'];
+
+  // KPIs
+  const totalHoy = DA.filter(r => r.fecha && mismaFecha(r.fecha, hoy)).length;
+  const dias = diasSemana(semanaOffset);
+  let turnosEsperados = 0, turnosCon = 0;
+  dias.forEach(dia => {
+    if(dia > hoy) return;
+    turnos.forEach(turno => {
+      if(filtroTurnoGlobal && filtroTurnoGlobal !== turno) return;
+      turnosEsperados++;
+      if(DA.some(r => r.fecha && mismaFecha(r.fecha, dia) && r.turno===turno)) turnosCon++;
+    });
+  });
+  const faltantes = turnosEsperados - turnosCon;
+  const pct = turnosEsperados > 0 ? Math.round(turnosCon/turnosEsperados*100) : 0;
+
+  document.getElementById('kpi-total').textContent = DA.length;
+  const kHoy = document.getElementById('kpi-hoy');
+  kHoy.textContent = totalHoy;
+  kHoy.className = 'kpi-val ' + (totalHoy >= 3 ? 'ok' : totalHoy >= 1 ? 'warn' : 'danger');
+  document.getElementById('kpi-hoy-sub').textContent = 'de ' + (filtroTurnoGlobal ? '1 turno' : '3 turnos') + ' esperados hoy';
+
+  const kPct = document.getElementById('kpi-pct');
+  kPct.textContent = pct + '%';
+  kPct.className = 'kpi-val ' + (pct>=80?'ok':pct>=50?'warn':'danger');
+  document.getElementById('kpi-pct-sub').textContent = `${turnosCon} de ${turnosEsperados} esta semana`;
+  document.getElementById('kpi-faltantes').textContent = faltantes;
+
+  // Cards estado hoy
+  const cont = document.getElementById('alertas-hoy');
+  cont.innerHTML = '';
+  const tActual = turnoActual().nombre;
+  const turnosMostrar = filtroTurnoGlobal ? turnos.filter(t=>t===filtroTurnoGlobal) : turnos;
+  turnosMostrar.forEach((turno, ii) => {
+    const i = turnos.indexOf(turno);
+    const reps = DA.filter(r => r.fecha && mismaFecha(r.fecha, hoy) && r.turno===turno);
+    const esTurnoCurrent = tActual === turno;
+    const min = minParaFinTurno();
+    const enAlerta = esTurnoCurrent && reps.length===0 && min<=60;
+    let tipo, icono, titulo, sub;
+    if (reps.length > 0) {
+      tipo='ok'; icono='✅';
+      titulo=`Turno ${turno} — ${reps.length} reporte(s) registrado(s)`;
+      const personas = [...new Set(reps.flatMap(r=>r.personas.split(/[;,]/).map(p=>p.trim()).filter(Boolean)))];
+      sub = `Personas: ${personas.join(', ')}`;
+    } else if (enAlerta) {
+      tipo='danger'; icono='🚨';
+      titulo=`TURNO ${turno.toUpperCase()} — SIN REPORTE (quedan ${min} min)`;
+      sub = `El turno termina a las ${horarios[i].split('–')[1].trim()} y no hay ningún reporte registrado`;
+    } else if (esTurnoCurrent) {
+      tipo='warn'; icono='⏳';
+      titulo=`Turno ${turno} en curso — aún sin reporte`;
+      sub = `Quedan ${min} minuto(s) para el fin del turno`;
+    } else {
+      tipo='danger'; icono='❌';
+      titulo=`Turno ${turno} — Sin reporte`;
+      sub = `No se registró ningún reporte para este turno hoy`;
+    }
+    // No mostrar turnos futuros como faltantes
+    const ahora = new Date();
+    const hIni = [6,14,22][i];
+    const esFuturo = ahora.getHours() < hIni && i > 0;
+    if (esFuturo) { tipo='ok'; icono='🕐'; titulo=`Turno ${turno} — Aún no inicia`; sub=`Horario: ${horarios[i]}`; }
+
+    cont.innerHTML += `
+      <div class="alerta-card ${tipo}">
+        <div class="alerta-card-icon">${icono}</div>
+        <div class="alerta-card-body">
+          <div class="alerta-card-title">${titulo}</div>
+          <div class="alerta-card-sub">${sub}</div>
+        </div>
+        <div class="alerta-card-time">${horarios[i]}</div>
+      </div>`;
+  });
+
+  // Tabla faltantes semana
+  const tbody = document.getElementById('tabla-faltantes');
+  tbody.innerHTML = '';
+  let hasFaltantes = false;
+  const turnosFilt = filtroTurnoGlobal ? [filtroTurnoGlobal] : turnos;
+  dias.forEach(dia => {
+    if(dia > hoy) return;
+    // Si hay filtro de mes, solo mostrar si el día está en ese mes
+    if(filtroMes) {
+      const key = dia.getFullYear()+'-'+String(dia.getMonth()+1).padStart(2,'0');
+      if(key !== filtroMes) return;
+    }
+    turnosFilt.forEach((turno) => {
+      const i = turnos.indexOf(turno);
+      const reps = DA.filter(r => r.fecha && mismaFecha(r.fecha, dia) && r.turno===turno);
+      if(reps.length === 0) {
+        hasFaltantes = true;
+        const anterior = DA.filter(r => r.turno===turno && r.fecha < dia).sort((a,b)=>b.fecha-a.fecha)[0];
+        tbody.innerHTML += `<tr>
+          <td class="td-mono">${fmtDia(dia)}</td>
+          <td><span class="badge badge-danger">${['☀','🌤','🌙'][i]} ${turno}</span></td>
+          <td class="td-mono">${horarios[i]}</td>
+          <td style="font-size:12px;color:var(--muted)">${anterior ? fmtFecha(anterior.fecha) + ' — ' + anterior.personas : '—'}</td>
+          <td><span class="badge badge-danger"><span class="dot dot-danger"></span> Sin reporte</span></td>
+        </tr>`;
+      }
+    });
+  });
+  if(!hasFaltantes) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">✅</div><p>Sin faltantes${filtroMes||filtroTurnoGlobal?' en este período':' esta semana'}</p></div></td></tr>`;
+  }
+}
+
+// ── TAB 2: ESTADÍSTICAS ──
+function renderEstadisticas() {
+  const DA = datosActivos();
+  // ── Por turno ──
+  const tGrid = document.getElementById('turno-stats-grid');
+  tGrid.innerHTML = '';
+  const turnosMeta = [
+    {n:'Mañana',c:'manana',e:'☀️'},
+    {n:'Tarde',c:'tarde',e:'🌤️'},
+    {n:'Noche',c:'noche',e:'🌙'}
+  ];
+  const turnosMostrar = filtroTurnoGlobal ? turnosMeta.filter(t=>t.n===filtroTurnoGlobal) : turnosMeta;
+  turnosMostrar.forEach(tm => {
+    const reps = DA.filter(r => r.turno===tm.n);
+    const personas = [...new Set(reps.flatMap(r=>r.personas.split(/[;,]/).map(p=>p.trim()).filter(Boolean)))];
+    const diasConReporte = [...new Set(reps.map(r=>r.fecha?.toDateString()))].length;
+    const acts = {};
+    reps.forEach(r => { const a = r.actividad; acts[a]=(acts[a]||0)+1; });
+    const topAct = Object.entries(acts).sort((a,b)=>b[1]-a[1])[0];
+    tGrid.innerHTML += `
+      <div class="turno-card">
+        <div class="turno-card-header">
+          <span class="turno-card-name ${tm.c}">${tm.e} ${tm.n}</span>
+          <span style="font-family:var(--mono);font-size:20px;font-weight:700">${reps.length}</span>
+        </div>
+        <div class="turno-stat-row"><span class="turno-stat-label">Total reportes</span><span class="turno-stat-val">${reps.length}</span></div>
+        <div class="turno-stat-row"><span class="turno-stat-label">Días con reporte</span><span class="turno-stat-val">${diasConReporte}</span></div>
+        <div class="turno-stat-row"><span class="turno-stat-label">Personas activas</span><span class="turno-stat-val">${personas.length}</span></div>
+        <div class="turno-stat-row"><span class="turno-stat-label">Actividad top</span><span class="turno-stat-val" style="font-size:11px;max-width:120px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topAct?topAct[0]:'—'}</span></div>
+      </div>`;
+  });
+
+  // ── Por trabajador ──
+  const wGrid = document.getElementById('workers-grid');
+  wGrid.innerHTML = '';
+  const mapaW = {};
+  DA.forEach((r) => {
+    r.personas.split(/[;,]/).map(p=>p.trim()).filter(Boolean).forEach(p => {
+      if(!mapaW[p]) mapaW[p] = { total:0, turnos:{Mañana:0,Tarde:0,Noche:0}, ultimo:null, acts:[] };
+      mapaW[p].total++;
+      mapaW[p].turnos[r.turno] = (mapaW[p].turnos[r.turno]||0) + 1;
+      if(!mapaW[p].ultimo || r.fecha > mapaW[p].ultimo) mapaW[p].ultimo = r.fecha;
+      if(r.actividad) mapaW[p].acts.push(r.actividad);
+    });
+  });
+  const maxTotal = Math.max(...Object.values(mapaW).map(w=>w.total), 1);
+  Object.entries(mapaW).sort((a,b)=>b[1].total-a[1].total).forEach(([nombre, w], i) => {
+    const pct = Math.round(w.total/maxTotal*100);
+    const color = COLORES_AVATAR[i % COLORES_AVATAR.length];
+    const iniciales = nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const turnoTop = Object.entries(w.turnos).sort((a,b)=>b[1]-a[1])[0];
+    const actTop = [...w.acts].sort((a,b) => w.acts.filter(x=>x===b).length - w.acts.filter(x=>x===a).length)[0];
+    wGrid.innerHTML += `
+      <div class="worker-card">
+        <div class="worker-avatar" style="background:${color}20;color:${color};border:1.5px solid ${color}40">${iniciales}</div>
+        <div class="worker-name">${nombre}</div>
+        <div class="worker-meta">${w.total} reportes · Turno ${turnoTop?turnoTop[0]:'—'}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="bar-label">${pct}% de participación</div>
+        ${actTop ? `<div class="worker-last">Actividad más frecuente:<br><strong>${actTop}</strong></div>` : ''}
+        ${w.ultimo ? `<div class="worker-last" style="margin-top:4px">Último: ${fmtFecha(w.ultimo)}</div>` : ''}
+      </div>`;
+  });
+  if(Object.keys(mapaW).length===0) {
+    wGrid.innerHTML = `<div style="color:var(--muted);font-size:13px;grid-column:1/-1">Sin datos para el período seleccionado.</div>`;
+  }
+
+  // ── Actividades más frecuentes ──
+  const mapaA = {};
+  DA.forEach(r => {
+    const a = (r.actividad||'').trim();
+    if(!a || a==='-' || a.toLowerCase()==='n/a') return;
+    if(!mapaA[a]) mapaA[a] = {total:0, turnos:{Mañana:0,Tarde:0,Noche:0}};
+    mapaA[a].total++;
+    mapaA[a].turnos[r.turno] = (mapaA[a].turnos[r.turno]||0) + 1;
+  });
+  const tbody = document.getElementById('tabla-actividades');
+  tbody.innerHTML = '';
+  Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,20).forEach(([act, d], i) => {
+    const turnoTop = Object.entries(d.turnos).sort((a,b)=>b[1]-a[1])[0];
+    const tcls = turnoTop?({Mañana:'warn',Tarde:'blue',Noche:'accent'}[turnoTop[0]]||''):'';
+    tbody.innerHTML += `<tr>
+      <td class="td-mono">${i+1}</td>
+      <td style="font-size:13px">${act}</td>
+      <td><span class="td-mono" style="color:var(--ok)">${d.total}</span></td>
+      <td>${turnoTop ? `<span class="badge badge-${tcls==='warn'?'warn':'blue'}">${turnoTop[0]}</span>` : '—'}</td>
+    </tr>`;
+  });
+  if(Object.keys(mapaA).length===0) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="empty-icon">📋</div><p>Sin actividades registradas</p></div></td></tr>`;
+  }
+}
+
+// ── TAB 3: TABLA REPORTES ──
+function renderTablaReportes() {
+  const DA = datosActivos();
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  // Si hay filtro de mes, ignorar la navegación de semana
+  let filtrados;
+  if(filtroMes) {
+    filtrados = DA.slice();
+  } else {
+    const dias = diasSemana(semanaOffset);
+    const lun = dias[0], dom = dias[6];
+    filtrados = DA.filter(r => r.fecha >= lun && r.fecha <= dom);
+  }
+
+  if(filtroActual !== 'todos') {
+    const map = {manana:'Mañana', tarde:'Tarde', noche:'Noche'};
+    filtrados = filtrados.filter(r => r.turno === map[filtroActual]);
+  }
+  filtrados.sort((a,b) => b.fecha - a.fecha);
+
+  const tbody = document.getElementById('tabla-reportes');
+  tbody.innerHTML = '';
+  if(filtrados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><p>Sin reportes para este período</p></div></td></tr>`;
+    return;
+  }
+  filtrados.forEach(r => {
+    const tcls = r.turno==='Mañana'?'warn':r.turno==='Tarde'?'blue':'blue';
+    const ticon = r.turno==='Mañana'?'☀':r.turno==='Tarde'?'🌤':'🌙';
+    tbody.innerHTML += `<tr>
+      <td class="td-mono">${fmtDia(r.fecha)}</td>
+      <td><span class="badge badge-${tcls}">${ticon} ${r.turno}</span></td>
+      <td style="font-size:12px">${r.personas||'—'}</td>
+      <td style="max-width:220px;font-size:13px">${r.actividad||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.equipo||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.insumos||'—'}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:150px">${r.obs||'—'}</td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════════
+function actualizarSemanaLabel() {
+  const dias = diasSemana(semanaOffset);
+  document.getElementById('semana-label').textContent =
+    fmtFecha(dias[0]) + ' – ' + fmtFecha(dias[6]);
+}
+
+function filtrar(tipo, btn) {
+  filtroActual = tipo;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTablaReportes();
+}
+
+function navSemana(dir) {
+  semanaOffset += dir;
+  renderTodo();
+}
+
+function cambiarTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+function toggleConfig() {
+  document.getElementById('config-panel').classList.toggle('open');
+}
+
+function guardarConfig() {
+  const cfg = {
+    clientId: document.getElementById('cfg-client').value,
+    tenantId: document.getElementById('cfg-tenant').value,
+    siteId:   document.getElementById('cfg-site').value,
+    itemId:   document.getElementById('cfg-item').value,
+    sheet:    document.getElementById('cfg-sheet').value,
+  };
+  localStorage.setItem('cfg_reportes', JSON.stringify(cfg));
+}
+
+function cargarConfigGuardada() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('cfg_reportes')||'{}');
+    if(cfg.clientId) document.getElementById('cfg-client').value = cfg.clientId;
+    if(cfg.tenantId) document.getElementById('cfg-tenant').value = cfg.tenantId;
+    if(cfg.siteId)   document.getElementById('cfg-site').value   = cfg.siteId;
+    if(cfg.itemId)   document.getElementById('cfg-item').value   = cfg.itemId;
+    if(cfg.sheet)    document.getElementById('cfg-sheet').value  = cfg.sheet;
+  } catch(e){}
+}
+
+function status(msg, tipo) {
+  const bar = document.getElementById('status-bar');
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-msg');
+  const cols = {ok:'var(--ok)',warn:'var(--warn)',danger:'var(--danger)',blue:'var(--blue)'};
+  dot.style.background = cols[tipo] || 'var(--muted)';
+  txt.textContent = msg;
+  bar.classList.add('show');
+  clearTimeout(bar._t);
+  bar._t = setTimeout(()=>bar.classList.remove('show'), 4000);
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+cargarConfigGuardada();
+actualizarSemanaLabel();
+cargarDemo(); // carga demo automáticamente al abrir
+setInterval(tickReloj, 1000);
+tickReloj();
+setInterval(() => { renderAlertas(); }, 60000);
+</script>
+</body>
+</html>
